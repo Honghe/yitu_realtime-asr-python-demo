@@ -11,6 +11,7 @@ python3 -m venv venv
 source /venv/bin/activate
 pip install -r requirements.txt
 ```
+若Anaconda环境`pyaudio`获取麦克风有问题，待解决。
 # 运行Demo
 ```
 python sdk_demo.py --help  
@@ -34,7 +35,7 @@ optional arguments:
 
 
 # 使用mic做音频源
-1. 通过get_index.py脚本获取到自己音频设备的id号, 示例通过设备名想使用的是7号设备
+1. 通过get_index.py脚本获取到自己音频设备的id号, 示例通过设备名想使用的是7号设备（或者使用系统默认的pulse）
 ```
 python get_index.py 
 ALSA lib pcm.c:2266:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.rear
