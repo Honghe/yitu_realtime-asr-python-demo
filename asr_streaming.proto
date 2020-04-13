@@ -1,0 +1,129 @@
+// Yitu Speech GRPC API: ver 1.0
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.yitutech.speech";
+option java_outer_classname = "StreamingProtos";
+
+// 音频相关设置。
+message AudioConfig {
+  // 音频的编码。
+  enum AudioEncoding {
+    UNSPECIFIED = 0;
+    PCM = 1;
+    AAC = 2;
+    MPEG2 = 3;
+  }
+  AudioEncoding aue = 1;
+}
+
+// 识别相关设置。
+message SpeechConfig {
+  // 转写的语言。
+  enum Language {
+    UNSPECIFIED = 0;
+    MANDARIN = 1;
+  }
+  Language lang = 1;
+  
+  // 情景模式，针对不同的应用场景可定制模型，例如医疗。
+  enum Scene {
+    GENERAL_SCENE = 0;
+  }
+  Scene scene = 2;
+
+  // 自定义词语（仅支持中文，不支持英文和符号）。
+  repeated string custom_word = 3;
+
+  // 使用已经上传的自定义词库，填写词库ID。（词语及词库总词数不超过1000个）
+  repeated string use_custom_words_id = 4;
+}
+
+// 音频流请求的相关设置。
+message StreamingSpeechConfig {
+  // 音频设置。
+  AudioConfig audio_config = 1;
+  // 识别设置。
+  SpeechConfig speech_config = 2;
+}
+
+// 流请求。
+message StreamingSpeechRequest {
+
+  // 一个流的请求，需要先发送设置，然后发送音频数据。
+  oneof request_payload {
+    // 音频流设置。
+    StreamingSpeechConfig streaming_speech_config = 1;
+
+    // 音频数据。每个请求的音频长度最长为60秒。针对实时场景，音频输入的速度超过实时时，性能无法保障，需与服务供应商沟通。
+    bytes audio_data = 2;
+  }
+}
+
+// 转写。
+message StreamingTranscription {
+  // 转写结果。
+  string transcribed_text = 1;
+
+  // 转写结果的分解（只对final状态结果有效，返回每个字及标点的详细信息）。
+  repeated StreamingTranscriptionPiece piece = 2;
+}
+
+// 转写分解。
+message StreamingTranscriptionPiece {
+  // 转写分解结果。
+  string transcribed_text = 1;
+
+  // 分解开始时间（音频开始时间为0）。
+  int64 begin_timestamp = 3;
+
+  // 分解结束时间（音频开始时间为0）。
+  int64 end_timestamp = 4;
+
+  // 转写结果的类型(一个结果可以对应多个状态)。
+  enum TranscribedType {
+    TOKEN = 0;
+    PUNCTUATION = 1;
+    NUMBER = 2;
+    PATCH = 3;
+    DISFLUENCY = 4;
+  }
+  //现在没有重复的实际应用，在语音组的建议下保留这个可能性
+  repeated TranscribedType transcribed_type = 2;
+}
+
+// 音频识别结果。
+message StreamingSpeechResult {
+  // 此识别结果是否为最终结果。
+  bool is_final = 1;
+  
+  // 最好的转写候选。
+  StreamingTranscription best_transcription = 2;
+}
+
+// 音频当前识别状态。
+message StreamingSpeechStatus {
+  // 当前音频处理进行到的时间点（音频开始时间为0）。
+  int64 processed_timestamp = 1;
+}
+
+// 音频流识别请求回应。
+message StreamingSpeechResponse {
+  // 此次实时处理的全局唯一ID。
+  int64 global_stream_id = 1;
+  
+  oneof response_content {
+    // 返回识别结果。
+    StreamingSpeechResult result = 2;
+
+    // 返回识别状态。
+    StreamingSpeechStatus status = 3;
+  }
+}
+
+// 音频流识别服务。
+service SpeechRecognition {
+    // 传入metadata "x-api-key"作为验证。
+    rpc RecognizeStream(stream StreamingSpeechRequest) returns(stream StreamingSpeechResponse);
+}
