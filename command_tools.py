@@ -25,5 +25,6 @@ def command_detect(text):
         match = pattern.search(text)
         if match:
             command = match.group()
+            # print('command: {}'.format(command))
             # logger.warning('command: {}'.format(command))
             return command

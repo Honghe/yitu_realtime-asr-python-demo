@@ -21,7 +21,9 @@ def eventStream():
             break
         else:
             # wait for source data to be available, then push it
-            yield 'data: {}\n\n'.format(json.dumps([command, text]))
+            msg = json.dumps([command, text], ensure_ascii=False)
+            # print('msg {}'.format(msg))
+            yield 'data: {}\n\n'.format(msg)
 
 
 def get_message():

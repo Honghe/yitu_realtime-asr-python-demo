@@ -239,7 +239,7 @@ def listen_print_loop(responses, stream, iq, iq2=None):
             start_ts = curr_ts
             print('stream %d speed:%7.2f,len:%d,transcribe:%s,total:%d' %
                   (stream.stream_id, lat, len(txt), top_alternative.transcribed_text, total))
-            iq.put((LOGCMD_SUCC, lat, len(txt)))
+            # iq.put((LOGCMD_SUCC, lat, len(txt)))
             command = command_detect(txt)
             if iq2 and command is not None:
                 iq2.put((LOGCMD_SUCC, command, txt))
