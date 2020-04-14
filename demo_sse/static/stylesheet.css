@@ -1,0 +1,35 @@
+
+.content {
+    max-width: 300px;
+    margin: auto;
+}
+
+.title {
+    margin: auto;
+    text-align: center;
+}
+
+ul {
+    width: 90%;
+    margin: auto;
+}
+
+/* Style the list items */
+ul li {
+    cursor: pointer;
+    position: relative;
+    padding: 12px 8px 12px 8px;
+    margin: 5px 0px 5px 0px;
+    background: #01a5fe;
+    font-size: 18px;
+    color: white;
+    transition: 0.2s;
+    list-style-type: none;
+    text-align: center;
+
+    /* make the list items unselectable */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

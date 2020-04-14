@@ -13,7 +13,7 @@ CachedResponseTimes = namedtuple("CachedResponseTimes", ["response_times", "num_
 CURRENT_RESPONSE_TIME_PERCENTILE_WINDOW = 10
 
 console_logger = logging.getLogger("console_logger")
-console_logger.setLevel(logging.DEBUG)
+console_logger.setLevel(logging.ERROR)
 # create console handler
 sh = logging.StreamHandler()
 sh.setLevel(logging.DEBUG)

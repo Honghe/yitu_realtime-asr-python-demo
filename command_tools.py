@@ -9,17 +9,21 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.WARN)
 
+# gen patterns
+wild_cn = '(.+?)'
+numbers = '([一两三四五六七八九十]+?)'
+patterns_str = ['上课',
+                '下课',
+                '给' + wild_cn + '加' + numbers + '分',
+                '给' + wild_cn + numbers + '朵小红花',
+                '给' + wild_cn + numbers + '颗小星星']
+patterns = [re.compile(x) for x in patterns_str]
+
 
 def command_detect(text):
-    patterns_str = ['上课',
-                    '下课',
-                    '给.+?加.+?分',
-                    '给.+?一朵小红花',
-                    '给.+?一颗小星星']
-    patterns = [re.compile(x) for x in patterns_str]
     for pattern in patterns:
         match = pattern.search(text)
         if match:
             command = match.group()
-            logger.warning('command: {}'.format(command))
+            # logger.warning('command: {}'.format(command))
             return command

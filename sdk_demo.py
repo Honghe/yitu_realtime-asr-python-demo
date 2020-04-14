@@ -20,9 +20,9 @@ from six.moves import queue
 import asr_streaming_v6_pb2 as asr_pb
 import asr_streaming_v6_pb2_grpc as asr_grpc
 import long_stats
-
 # ======================= speechsaas core import end ======================
 from command_tools import command_detect
+from demo_sse import app
 
 PROD_ASRRT_URL = 'stream-asr-prod.yitutech.com:50051'
 RATE = 16000
@@ -218,7 +218,7 @@ def duration_to_secs(duration):
     return duration / 1000
 
 
-def listen_print_loop(responses, stream, iq):
+def listen_print_loop(responses, stream, iq, iq2=None):
     """Iterates through server responses and prints them.
     Same as in transcribe_streaming_mic, but keeps track of when a sent
     audio_chunk has been transcribed.
@@ -240,8 +240,11 @@ def listen_print_loop(responses, stream, iq):
             print('stream %d speed:%7.2f,len:%d,transcribe:%s,total:%d' %
                   (stream.stream_id, lat, len(txt), top_alternative.transcribed_text, total))
             iq.put((LOGCMD_SUCC, lat, len(txt)))
-            command_detect(top_alternative.transcribed_text)
+            command = command_detect(txt)
+            if iq2 and command is not None:
+                iq2.put((LOGCMD_SUCC, command, txt))
         else:
+            pass
             print('stream %d transcribe:%s' % (stream.stream_id, result.best_transcription.transcribed_text))
 
 
@@ -276,7 +279,7 @@ def signature(api_id, api_ts, api_key):
     return xsign
 
 
-def worker(sample_rate, audio_src, dev_idx, stream_id, iq, asrurl):
+def worker(sample_rate, audio_src, dev_idx, stream_id, iq, asrurl, iq2=None):
     speech_config = asr_pb.SpeechConfig(
         lang=asr_pb.SpeechConfig.MANDARIN, scene=asr_pb.SpeechConfig.GENERAL_SCENE)
     audio_config = asr_pb.AudioConfig(
@@ -302,7 +305,7 @@ def worker(sample_rate, audio_src, dev_idx, stream_id, iq, asrurl):
 
     try:
         responses = client.RecognizeStream(make_request(mic_manager, audio_generator), metadata=metadata)
-        listen_print_loop(responses, mic_manager, iq)
+        listen_print_loop(responses, mic_manager, iq, iq2)
     except KeyboardInterrupt:
         print('#%d catch KeyboardInterrupt' % stream_id)
         pass
@@ -340,10 +343,15 @@ def main(sample_rate, src_type, audio_src, dev_idx, num_clients, asrurl, waitsec
     pool = multiprocessing.Pool(processes=num_clients)
     m = multiprocessing.Manager()
     iq = m.Queue()
+    iq2 = m.Queue()
 
     # logging
     log_daemon = multiprocessing.Process(target=log_func, args=(iq,))
     log_daemon.start()
+
+    # flask
+    flask_daemon = multiprocessing.Process(target=app.run, args=(iq2,))
+    flask_daemon.start()
     multiple_results = []
 
     if src_type == "file":
@@ -353,7 +361,7 @@ def main(sample_rate, src_type, audio_src, dev_idx, num_clients, asrurl, waitsec
             multiple_results.append(pool.apply_async(worker, (sample_rate, audio_lst[afn], dev_idx, i, iq, asrurl)))
     elif src_type == "mic":
         for i in range(num_clients):
-            multiple_results.append(pool.apply_async(worker, (sample_rate, None, dev_idx, i, iq, asrurl)))
+            multiple_results.append(pool.apply_async(worker, (sample_rate, None, dev_idx, i, iq, asrurl, iq2)))
 
     total = len(multiple_results)
     complete = 0
@@ -381,7 +389,9 @@ def main(sample_rate, src_type, audio_src, dev_idx, num_clients, asrurl, waitsec
     print('stop processing pool...')
     pool.terminate()
     iq.put((LOGCMD_QUIT, 0, 0))
+    iq.put((LOGCMD_QUIT, 0, 0))
     log_daemon.join()
+    flask_daemon.join()
 
 
 if __name__ == '__main__':
