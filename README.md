@@ -35,6 +35,7 @@ optional arguments:
 
 
 # 使用mic做音频源
+note: Ubuntu sometimes can't not receive bluetooth microphone.
 1. 通过get_index.py脚本获取到自己音频设备的id号, 示例通过设备名想使用的是7号设备（或者使用系统默认的pulse）
 ```
 python get_index.py 
@@ -58,3 +59,6 @@ Input Device id  14  -  pulse
 Input Device id  16  -  default
 ```
 2. python sdk_demo.py --dev_idx 7 --src_type mic
+
+# Flask SSE
+只支持一个Web client，多个时如何复制分发数据？
